@@ -1,9 +1,5 @@
 use wasm_bindgen::prelude::*;
-
-#[wasm_bindgen]
-pub fn add_two_nums(a: i32, b:i32) -> i32 {
-    a + b
-}
+use rand::Rng;
 
 #[wasm_bindgen]
 #[derive(Debug, Eq, PartialEq, Clone)]
@@ -23,18 +19,27 @@ pub enum Player {
 
 #[wasm_bindgen]
 #[derive(Debug, Eq, PartialEq, Clone)]
+pub enum Difficulty {
+    EASY = 0,
+    MEDIUM = 1,
+    DIFFICULT= 2
+}
+
+#[wasm_bindgen]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Board {
     matrix: Vec<Player>,
     moves: Vec<usize>,
     status: State,
     turn: Player,
     winner: Player,
+    difficulty: Difficulty
 }
 #[wasm_bindgen]
 impl Board {
 
     #[wasm_bindgen(constructor)]
-    pub fn new(start_player: Player) -> Self {
+    pub fn new(start_player: Player, difficulty: Difficulty) -> Self {
         Board {
             matrix: vec![Player::EMPTY, Player::EMPTY, Player::EMPTY,
                 Player::EMPTY, Player::EMPTY, Player::EMPTY,
@@ -44,6 +49,7 @@ impl Board {
             status: State::INPROGRESS,
             turn: start_player,
             winner: Player::EMPTY,
+            difficulty: difficulty
         }
     }
 
@@ -120,6 +126,31 @@ impl Board {
     }
 
     #[wasm_bindgen]
+    pub fn get_next_move(&mut self) -> usize {
+        match self.difficulty {
+            Difficulty::EASY => self.get_random_move(),
+            Difficulty::MEDIUM => self.get_medium_move(),
+            Difficulty::DIFFICULT => self.get_best_move(),
+        }
+    }
+
+    pub fn get_random_move(&self) -> usize {
+        let mut rng = rand::thread_rng();
+        let available_moves = find_available_moves(self);
+        let move_index = rng.gen_range(0, available_moves.len());
+        available_moves[move_index]
+    }
+
+    pub fn get_medium_move(&mut self) -> usize {
+        let mut rng = rand::thread_rng();
+        let random_num = rng.gen_range(0, 100);
+        if random_num < 75 {
+            self.get_best_move()
+        } else {
+            self.get_random_move()
+        }
+    }
+
     pub fn get_best_move(&mut self) -> usize {
         let mut best_score = -1000;
         let mut best_move: usize = 0;
